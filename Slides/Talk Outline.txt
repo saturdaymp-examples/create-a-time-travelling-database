@@ -1,0 +1,129 @@
+Hello everyone.
+
+**** Who am I ****
+
+My name is Chris and this is the Create a Time Traveling Database presentation.  In this talk we will discuss how to create a temporal database.  A database where you can retrieve both past, present, and future data.
+
+I run a consulting company Saturday Morning Productions.  If you have a problem that requires more then just a basic website, such as a temporal database, then give me a shout.
+
+I'm also the Program Director for the Edmonton .NET Users Group (EDMUG).  .NET is in the name but really EDMUG discusses any topic developers using Microsoft technologies would be interested in.  For example, our next presentation is on Git and GitHub on April 30th at the Idywylde library.  As program director it is my job to find presenters for our monthly meetup.  If you are interested in please reach out to me.  We would love to have a SQL Server presentation and I'm sure we could find a way to make it relivent to developers.
+
+**** EDMPASS User Group ****
+
+The people who orgranized this SQL Saturday also run a monthy meetup for database professionals.  I'm not involved with EDMPASS but I have attended a couple presentations and enjoyed them.  EDMPASS and EDMUG have been talking about doing joint presentation/workshop.  Talk to me after if you have any ideas.
+
+**** Thank our Sponsors ****
+
+Sponsors make events like this possible so if you see any of the sponsors here today please thank them.  Some of these sponsors are new to me.  I know Azure and DevFacto.  DevFacto has sponsored EMDUG events and employees have done presentations.  Anyone know anything about the other sponsors?
+
+**** Data Changes over Time ****
+
+Databases are good at storing data but only capture that data for a moment in time.  For example a database might store where you live, your current job, and is you are married at this moment.  But data changes over time.  People move, change jobs, have different salaries, relationships end and new ones begin, etc.
+
+What happens in most databases if you need to change a customers address?  You just overwrite the existing address with their new one.  Poof, the old address is gone.  You might be able to find it in an backup or some data wharehouse but not in the main database.
+
+Is this a problem?  Depends on your business requirements.  What happens if you need to adjudicate claims that are submitted months or up to a year after the service is performed?
+
+**** Claim Adjudication ****
+
+This is the problem I faced many years ago.  At first I thought I would only need historical data for a couple pieces of data, like address or something.  As I discussed how claims are adjudicated with the client I found out this was not true.  There was lots of data that need to be temporal.  Over half the database.  Adding an effective date to a table or two was not going to work.
+
+**** What is a Temporal Database? ****
+
+After some research and experimentation I came up with the idea for what I first dubbed a historical database.  Really it's a temporal database but historical is easier to say.  What I wanted was a database that allowed data to change over time.  That allowed for past, present, and future data.
+
+I also wanted to use the client's existing database, which was SQL Server.  I also wanted to be able to use any existing database tools such as reporting.  Actually, I didn't at the time but I like to say that now as it makes me same smarter then I am.
+
+Finally I wanted query writers, developers or DBAs, write queries similar to how they would write them for non-temporal tables.  This I did think of at the time and I think I was realitifly successful.  Of course the queries aren't 100% the same as you do need to include dates but close enough.
+
+**** Main Reference ****
+
+This book was my main reference.  Actually it was the only one I could find at the time.  I used it for tips on how the design temporal tables and also writing temporal queries.
+
+****
+**** Theory
+****
+
+Before we talk about how to create a temporal database in SQL Server, lets talk a bit about the theory behind temporal databases.  First up is the different types of temporalness.
+
+**** Types of Temporalness ****
+
+There are two types of temporalness: Valid (Effective) and Transaction (Entered).  I've been struggling with what to call the differnt types of temporalness.  At frist I called them effective and entered but I like the Wikipedia definition of valid and transaction beter.  I was always getting effective and entered confused and switching them when talking.
+
+Valid (Effective) is time the data was valid in the real world.  For example, when did you work at company X?
+
+Transaction (Entered) is when the data was entered into the database.  For example, we entered the fact worked at company X today.
+
+Say you worked at company X from Jan 1st, 2009 to Dec 31st, 2012.  If we entered that information into the database today it would have an valid interval of Jan 1st, 2009 to Dec 31st, 2012.  It would have a transaction interval from today to infinity.
+
+For this talk we will focus on Valid time.
+
+**** Timelines ****
+
+The next piece of theory we will talk about is Timelines.  Since data can change over time we need a way to represent this visually in a timeline.
+
+A timeline is made up of intervals.  A interval is period of time where all the data is the same.
+
+For example, we have a timeline that represents data for Chronos the God of time.  As you can see he changed is name but is still the God of Time.
+
+**** Timeline Properties: Past, Present, and Future ****
+
+The intervals in a timeline can be past, present, and future.  There is also no limit to the number of intervals a timeline has.
+
+**** Timeline Properties: Gaps ****
+
+A timeline can have gaps between intervals.  This represents that we don't know what the data was at the given time.  It can also represent an actual gap.  For example, if the timeline represented your employment and you where laid off for 6 months then then you could have a 6 month gap.
+
+**** Timeline Properties: Overlaps not Allowed ****
+
+The final Timeline property is the most important.  Timelines CANNOT overlap.   In this example if I query for Chronos's name I would get two answers.  I'll show how to prevent this in an actual database in a couple slides.
+
+**** Data from Multiple Timelines ****
+
+It's all fine and dandy to have one Timeline but often we will need data from one or more timelines.  For example say you want data about a customer and their home address for a particular date.  It would look something like this example.
+
+Depending on when date we are interested in we either get their Calgary or Edmonton address.
+
+**** Theory to Practice ****
+
+Let's put some of this theory to practice.  As you might have guessed a timeline represents a record in a table.  The only difference is this record can span multiple rows with each interval being a seperate row.  Notice the RecordID is the same.  That means these two row are intervals in the same timeline.
+
+**** Creating a Temporal Table ****
+
+All temporal tables will have an Id, RecordId, StartDate, and EndDate fields.  The Id field your standard auto-generated field and is the ID of the interval.  The recordID NOT auto-generated and is the Id of the Timeline.  It is consistent across all the rows/intervals.
+
+**** Temporal Table Example ****
+
+Here is an example of a Temporal table that has 3 timelines in it.  These timelines are made up of 5 intervals so there are 5 rows in the table.  The first row represents the first interval for Chronos and the creation of the timeline.  The second row is the second interval for Chronos.
+
+The 3rd row is for the first interval for Hades.  But then notice the next row is for Zeus.  Then the final row is for the re-named Hades.  For whatever reason the Zeus interval got inserted before the second Hades row.
+
+Don't count on the Ids for timeline being sequencial.  Also don't count on there being a Id that is the same as the recordId as the first interval can be deleted.
+
+**** Deteciting Overlapping Segments ****
+
+This is a trigger to check if the inserted/updated interval overlaps an existing one.  It's not as complicated as you would think.
+
+**** Algorithm to Find Overlapping Segments ****
+
+At the top of this diagram we have the existing interval and below are all the possible ways a new interval can be inserted.  All but two are overlapping and shouldn't be allowed.
+
+What do all the overlapping segments have in common?  Their end date is greater then the existing intervals start date and the their start date is less then existing intervals end date.
+
+**** Temporal Foreign Keys ****
+
+Remember that the timeline is not defined by the ID but by the RecordId.  That means you need to join on the RecordId.  The problem is the RecordId is not unique.  Remember, it is the same for all the intervals.  This means you won't be able to use the databases default foreign keys.  Instead you will need to create triggers.
+
+I'll show you what the triggers look like but in the long run you should create a tool to generates the foreign key triggers for you.
+
+**** Temporal Foreign Key Delete Trigger ****
+
+This trigger goes on the parent table.  In this example it goes on the Customer table.  One thing to note about this trigger is that it only raises an error if this is the last interval being deleted.  That is why we have the sub query.
+
+**** Temporal Foreign Key Insert/Update Trigger ****
+
+This trigger goes on the child table, or the Address table in our example.  It is slightly less complicated then the delete trigger as we only have to check if an interval exists in the parent table.
+
+**** Writing Queries ****
+
+Similar to writing non-temporal queries but you need to remember to filter by the valid date.  If joining tables you need to remember join on the RecordId and filter all the temporal tables by the valid date.
