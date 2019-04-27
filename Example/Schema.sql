@@ -1,4 +1,11 @@
 
+USE master
+GO
+
+DROP DATABASE TemporalDemo
+GO
+
+
 CREATE DATABASE TemporalDemo
 GO
 
@@ -41,13 +48,15 @@ CREATE TRIGGER TR_Customers_UpdateRecordId ON Customers FOR INSERT AS
 GO
 
 CREATE TRIGGER TR_Customers_Addresses_ForeignKey_D ON Customers FOR DELETE AS
-  IF NOT EXISTS(
-    SELECT *
-    FROM Customers
-    Where RecordId IN (
-      SELECT CustomerRecId
+  IF EXISTS(
+      SELECT *
       FROM Addresses
-      INNER JOIN deleted On deleted.RecordId = CustomerRecId
+      INNER JOIN deleted ON deleted.RecordId = Addresses.CustomerRecId
+      AND deleted.RecordId NOT IN (
+          SELECT Customers.RecordId
+          FROM Customers
+          WHERE Customers.Id <> deleted.Id
+          AND Customers.RecordId = deleted.RecordId
       )
     )
     BEGIN
@@ -55,7 +64,6 @@ CREATE TRIGGER TR_Customers_Addresses_ForeignKey_D ON Customers FOR DELETE AS
       ROLLBACK;
     END
 GO
-
 
 CREATE TABLE Addresses
 (

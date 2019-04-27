@@ -1,8 +1,12 @@
 --
--- Clean up the table.
+-- Clean up the tables.
 --
 DELETE
-FROM Customers;
+FROM Addresses
+GO
+
+DELETE
+FROM Customers
 GO
 
 --
@@ -75,13 +79,13 @@ FROM Customers;
 -- Add an address.
 --
 INSERT INTO Addresses (StartDate, EndDate, CustomerRecId, Address)
-VALUES ('2000-01-01', '2000-12-31', #, '1234-12 Street')
+VALUES ('2000-01-01', '2000-12-31', 9, '1234-12 Street')
 
 --
 -- Try to add an address with an invalid Customers foreign key.
 --
 INSERT INTO Addresses (StartDate, EndDate, CustomerRecId, Address)
-VALUES ('2000-01-01', '2000-12-31', #, '1234-12 Street')
+VALUES ('2000-01-01', '2000-12-31', 9, '1234-12 Street')
 
 --
 -- Show what is in the table.
@@ -93,6 +97,6 @@ FROM Addresses
 -- Try to delete Customers segments.  All but the last
 -- should be deleted.
 --
-DELETE FROM Customers WHERE ID = 41
-DELETE FROM Customers WHERE ID = 46
-DELETE FROM Customers WHERE ID = 47
+DELETE FROM Customers WHERE ID = 9
+DELETE FROM Customers WHERE ID = 14
+DELETE FROM Customers WHERE ID = 15
