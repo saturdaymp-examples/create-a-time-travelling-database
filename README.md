@@ -4,7 +4,7 @@ A presentation I gave at [SQL Saturday 840](https://www.sqlsaturday.com/840/even
 A lighting version of this talk can be found [here](https://github.com/saturdaymp-examples/a-brief-history-of-the-creation-of-a-time-traveling-database).  Finally more writting about temporal database can be found [here](https://nftb.saturdaymp.com/temporal-database-design/).
 
 # Quickstart
-You'll need SQL Server installed to run the demos.  If you have [Docker](https://www.docker.com/) installed there is a Docker Compose file to get you up and running quickly:
+You'll need SQL Server installed to run the demos in the example [folder](Example).  If you have [Docker](https://www.docker.com/) installed there is a Docker Compose file to get you up and running quickly:
 
 ````
 docker-compose up
